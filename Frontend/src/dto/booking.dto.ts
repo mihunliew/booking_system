@@ -2,6 +2,8 @@ import { BookingStatus, PaymentStatus } from '@/constants/enums'
 
 export interface CheckoutRequest {
   paymentSettingId: number;
+  promoCode?: string;
+  reservationToken?: string;
   notes?: string;
 }
 

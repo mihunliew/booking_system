@@ -23,7 +23,7 @@ public class AdminPermission {
     private AdminRole adminRole;
 
     @Column(name = "module_name", nullable = false, length = 50)
-    private String moduleName; // e.g. "USERS", "PRODUCTS", "BOOKINGS", "ROLES"
+    private String moduleName; // e.g. "USERS", "PRODUCTS", "BOOKINGS", "ROLES", "PROMOCODES"
 
     @Column(name = "can_create", nullable = false)
     private boolean canCreate;

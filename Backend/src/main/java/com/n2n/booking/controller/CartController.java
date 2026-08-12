@@ -30,18 +30,18 @@ public class CartController {
         return ResponseEntity.ok(cartService.addToCart(currentUser.getId(), request));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/items/{id}")
     public ResponseEntity<CartDTOs.CartItemResponse> updateCartItem(
             @AuthenticationPrincipal UserPrincipal currentUser,
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @Valid @RequestBody CartDTOs.UpdateCartRequest request) {
         return ResponseEntity.ok(cartService.updateCartItem(currentUser.getId(), id, request));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/items/{id}")
     public ResponseEntity<Void> removeCartItem(
             @AuthenticationPrincipal UserPrincipal currentUser,
-            @PathVariable Long id) {
+            @PathVariable(name = "id") Long id) {
         cartService.removeCartItem(currentUser.getId(), id);
         return ResponseEntity.noContent().build();
     }

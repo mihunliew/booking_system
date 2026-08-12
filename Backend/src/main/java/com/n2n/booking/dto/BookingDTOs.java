@@ -19,6 +19,8 @@ public class BookingDTOs {
     @AllArgsConstructor
     public static class CheckoutRequest {
         private Long paymentSettingId;
+        private String promoCode;
+        private String reservationToken;
         private String notes;
     }
 
@@ -47,6 +49,9 @@ public class BookingDTOs {
         private Long userId;
         private String username;
         private String userFullName;
+        private String promoCode;
+        private BigDecimal subtotalAmount;
+        private BigDecimal discountAmount;
         private BigDecimal totalAmount;
         private BookingStatus status;
         private PaymentStatus paymentStatus;

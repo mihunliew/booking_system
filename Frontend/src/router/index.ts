@@ -20,6 +20,7 @@ import AdminProductView from '../views/admin/AdminProductView.vue'
 import AdminBookingView from '../views/admin/AdminBookingView.vue'
 import AdminRoleView from '../views/admin/AdminRoleView.vue'
 import AdminSettingView from '../views/admin/AdminSettingView.vue'
+import AdminPromoCodeView from '../views/admin/AdminPromoCodeView.vue'
 import { isSuperAdmin } from '../helpers/auth.helper'
 
 const routes: Array<RouteRecordRaw> = [
@@ -47,6 +48,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'products', name: 'AdminProducts', component: AdminProductView },
       { path: 'bookings', name: 'AdminBookings', component: AdminBookingView },
       { path: 'bookings/:id', name: 'AdminBookingDetail', component: BookingDetailView },
+      { path: 'promocodes', name: 'AdminPromoCodes', component: AdminPromoCodeView },
       { path: 'roles', name: 'AdminRoles', component: AdminRoleView },
       { path: 'settings', name: 'AdminSettings', component: AdminSettingView, meta: { requiresSuperAdmin: true } }
     ]

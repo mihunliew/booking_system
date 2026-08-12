@@ -1,5 +1,3 @@
-package com.n2n.booking.entity; // Wait, package should be repository
-
 package com.n2n.booking.repository;
 
 import com.n2n.booking.entity.BookingItem;

@@ -3,9 +3,9 @@
     <h1 class="page-title">Checkout & Booking Confirmation</h1>
     <p class="page-subtitle">Select your payment method to finalize booking</p>
 
-    <div v-if="loading" class="loading">Preparing checkout...</div>
+    <div v-if="loading" class="loading">Preparing checkout summary...</div>
 
-    <div v-else-if="cartItems.length === 0" class="glass-panel empty-checkout">
+    <div v-else-if="!summary || !summary.items || summary.items.length === 0" class="glass-panel empty-checkout">
       <p>No items in cart to checkout.</p>
       <router-link to="/" class="btn btn-primary" style="margin-top: 1rem;">Go to Home</router-link>
     </div>
@@ -36,14 +36,14 @@
         </div>
 
         <button @click="confirmCheckout" class="btn btn-primary btn-full btn-lg" :disabled="submitting">
-          {{ submitting ? 'Processing Order...' : `Confirm & Book ($${totalSubtotal.toFixed(2)})` }}
+          {{ submitting ? 'Processing Order...' : `Confirm & Book ($${summary.totalAmount.toFixed(2)})` }}
         </button>
       </div>
 
       <div class="items-summary glass-panel">
         <h2>Booking Summary</h2>
         <div class="summary-item-list">
-          <div v-for="item in cartItems" :key="item.id" class="summary-item">
+          <div v-for="item in summary.items" :key="item.id" class="summary-item">
             <div class="summary-item-info">
               <span class="summary-name">{{ item.productName }}</span>
               <span class="summary-meta">Date: {{ item.bookingDate }} | Qty: {{ item.quantity }}</span>
@@ -52,9 +52,53 @@
           </div>
         </div>
 
-        <div class="total-bar">
-          <span>Total Payable</span>
-          <span class="total-price">${{ totalSubtotal.toFixed(2) }}</span>
+        <!-- Promo Code Input / Applied Badge Section -->
+        <div class="promo-section">
+          <label class="form-label">Promo Code</label>
+          <div v-if="!summary.promoCode" class="promo-input-group">
+            <input
+              type="text"
+              v-model="promoInput"
+              placeholder="Enter promo code (e.g. SUMMER10)"
+              class="form-input promo-input"
+              @keyup.enter="applyPromoCode"
+              :disabled="applyingPromo"
+            />
+            <button @click="applyPromoCode" class="btn btn-secondary" :disabled="applyingPromo || !promoInput.trim()">
+              {{ applyingPromo ? 'Checking...' : 'Apply' }}
+            </button>
+          </div>
+
+          <div v-else class="applied-promo-box glass-card">
+            <div class="promo-badge-info">
+              <span class="promo-tag">🏷️ {{ summary.promoCode }}</span>
+              <span class="promo-desc">
+                {{ summary.discountType === 'PERCENTAGE' ? summary.discountValue + '% Off' : '$' + summary.discountValue + ' Off' }}
+                (Locked 5m)
+              </span>
+            </div>
+            <button @click="removePromoCode" class="btn btn-danger btn-sm" :disabled="applyingPromo">
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <!-- Price Breakdown -->
+        <div class="breakdown-section">
+          <div class="breakdown-row">
+            <span>Subtotal</span>
+            <span>${{ summary.subtotal.toFixed(2) }}</span>
+          </div>
+
+          <div v-if="summary.discountAmount > 0" class="breakdown-row discount-row">
+            <span>Discount ({{ summary.promoCode }})</span>
+            <span class="discount-val">-${{ summary.discountAmount.toFixed(2) }}</span>
+          </div>
+
+          <div class="total-bar">
+            <span>Total Payable</span>
+            <span class="total-price">${{ summary.totalAmount.toFixed(2) }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -64,17 +108,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { CartApi, BookingApi, SettingApi } from '../../services'
-import type { CartItemResponse } from '../../services'
-import type { SettingResponse } from '../../services'
+import { BookingApi, SettingApi, PromoCodeApi } from '../../services'
+import type { BookingSummaryResponse, SettingResponse } from '../../services'
 import Toast from '../../components/Toast.vue'
 
 const router = useRouter()
-const cartItems = ref<CartItemResponse[]>([])
+const summary = ref<BookingSummaryResponse | null>(null)
 const loading = ref(true)
 const submitting = ref(false)
+const applyingPromo = ref(false)
+const promoInput = ref('')
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
 
 const selectedMethod = ref<number | null>(null)
@@ -82,26 +127,58 @@ const notes = ref('')
 
 const paymentMethods = ref<SettingResponse[]>([])
 
-const totalSubtotal = computed(() => {
-  return cartItems.value.reduce((acc, item) => acc + (item.subtotal || 0), 0)
-})
-
-const fetchCartAndSettings = async () => {
+const fetchCheckoutData = async () => {
   loading.value = true
   try {
-    const [cartData, settingsData] = await Promise.all([
-      CartApi.getCart(),
+    const [summaryData, settingsData] = await Promise.all([
+      BookingApi.getCheckoutSummary(),
       SettingApi.getActivePaymentMethods()
     ])
-    cartItems.value = cartData
+    summary.value = summaryData
     paymentMethods.value = settingsData
     if (paymentMethods.value.length > 0) {
       selectedMethod.value = paymentMethods.value[0].id
     }
   } catch (err) {
-    console.error('Failed to load checkout data:', err)
+    console.error('Failed to load checkout summary:', err)
   } finally {
     loading.value = false
+  }
+}
+
+const applyPromoCode = async () => {
+  if (!promoInput.value.trim()) return
+  applyingPromo.value = true
+  try {
+    const result = await PromoCodeApi.applyPromoCode({ code: promoInput.value })
+    summary.value = result
+    if (result.valid) {
+      toastRef.value?.show(result.message || 'Promo code applied successfully!')
+      promoInput.value = ''
+    } else {
+      toastRef.value?.show(result.message || 'Invalid promo code', 'error')
+    }
+  } catch (err: any) {
+    const errorMsg = typeof err === 'string' ? err : (err.message || 'Failed to apply promo code');
+    toastRef.value?.show(errorMsg, 'error')
+  } finally {
+    applyingPromo.value = false
+  }
+}
+
+const removePromoCode = async () => {
+  applyingPromo.value = true
+  try {
+    const result = await PromoCodeApi.applyPromoCode({
+      code: null,
+      reservationToken: summary.value?.reservationToken
+    })
+    summary.value = result
+    toastRef.value?.show('Promo code removed')
+  } catch (err: any) {
+    toastRef.value?.show('Failed to remove promo code', 'error')
+  } finally {
+    applyingPromo.value = false
   }
 }
 
@@ -114,6 +191,8 @@ const confirmCheckout = async () => {
   try {
     const booking = await BookingApi.checkout({
       paymentSettingId: selectedMethod.value,
+      promoCode: summary.value?.promoCode,
+      reservationToken: summary.value?.reservationToken,
       notes: notes.value
     })
     
@@ -129,14 +208,15 @@ const confirmCheckout = async () => {
       }, 800)
     }
   } catch (err: any) {
-    toastRef.value?.show(err.response?.data?.message || 'Checkout failed', 'error')
+    const errorMsg = typeof err === 'string' ? err : (err.message || 'Checkout failed');
+    toastRef.value?.show(errorMsg, 'error')
   } finally {
     submitting.value = false
   }
 }
 
 onMounted(() => {
-  fetchCartAndSettings()
+  fetchCheckoutData()
 })
 </script>
 
@@ -157,7 +237,7 @@ onMounted(() => {
 
 .checkout-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 400px;
   gap: 2rem;
 }
 
@@ -261,12 +341,79 @@ onMounted(() => {
   color: #38bdf8;
 }
 
+.promo-section {
+  border-top: 1px solid var(--border-glass);
+  padding-top: 1.25rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.promo-input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.promo-input {
+  flex: 1;
+  text-transform: uppercase;
+}
+
+.applied-promo-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  margin-top: 0.5rem;
+  background: var(--bg-surface-elevated);
+  border-color: var(--status-completed);
+}
+
+.promo-badge-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.promo-tag {
+  font-weight: 800;
+  color: var(--status-completed);
+  font-size: 0.95rem;
+}
+
+.promo-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.breakdown-section {
+  border-top: 1px solid var(--border-glass);
+  padding-top: 1rem;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.discount-row {
+  color: var(--status-completed);
+  font-weight: 700;
+}
+
+.discount-val {
+  color: var(--status-completed);
+}
+
 .total-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid var(--border-glass);
-  padding-top: 1rem;
+  border-top: 1px dashed var(--border-glass);
+  padding-top: 0.85rem;
+  margin-top: 0.85rem;
   font-weight: 800;
   font-size: 1.1rem;
 }

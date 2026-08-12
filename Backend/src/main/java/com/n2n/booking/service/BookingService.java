@@ -13,7 +13,11 @@ import com.n2n.booking.repository.BookingRepository;
 import com.n2n.booking.repository.CartItemRepository;
 import com.n2n.booking.repository.UserRepository;
 import com.n2n.booking.entity.GeneralSetting;
+import com.n2n.booking.entity.PromoCode;
+import com.n2n.booking.entity.PromoCodeReservation;
 import com.n2n.booking.repository.GeneralSettingRepository;
+import com.n2n.booking.repository.PromoCodeRepository;
+import com.n2n.booking.repository.PromoCodeReservationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +39,8 @@ public class BookingService {
     private final UserRepository userRepository;
     private final StripeService stripeService;
     private final GeneralSettingRepository settingRepository;
+    private final PromoCodeRepository promoCodeRepository;
+    private final PromoCodeReservationRepository reservationRepository;
 
     @Transactional
     public BookingDTOs.BookingResponse checkout(Long userId, BookingDTOs.CheckoutRequest request) {
@@ -49,15 +55,61 @@ public class BookingService {
         GeneralSetting paymentSetting = settingRepository.findById(request.getPaymentSettingId())
                 .orElseThrow(() -> new ResourceNotFoundException("Payment method not found"));
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal subtotalAmount = BigDecimal.ZERO;
         List<BookingItem> bookingItems = new ArrayList<>();
 
         String bookingNo = "BK-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
 
+        for (CartItem cartItem : cartItems) {
+            BigDecimal price = cartItem.getProduct().getPrice();
+            BigDecimal itemSubtotal = price.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+            subtotalAmount = subtotalAmount.add(itemSubtotal);
+        }
+
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        String appliedPromoCode = null;
+
+        // Check for promo code reservation or code
+        if (request.getReservationToken() != null && !request.getReservationToken().trim().isEmpty()) {
+            PromoCodeReservation reservation = reservationRepository.findByReservationToken(request.getReservationToken())
+                    .orElseThrow(() -> new BadRequestException("Promo code reservation not found or has expired. Please apply promo code again."));
+
+            if (reservation.getExpiresAt().isBefore(LocalDateTime.now())) {
+                reservationRepository.delete(reservation);
+                throw new BadRequestException("Promo code reservation has expired (5 minutes timeout). Please re-apply promo code.");
+            }
+
+            if (!reservation.getUser().getId().equals(userId)) {
+                throw new BadRequestException("Unauthorized promo code reservation token");
+            }
+
+            PromoCode promo = reservation.getPromoCode();
+            appliedPromoCode = promo.getCode();
+            discountAmount = reservation.getDiscountAmount();
+
+            // Increment used count on PromoCode
+            promo.setUsedCount(promo.getUsedCount() + 1);
+            promoCodeRepository.save(promo);
+
+            // Delete reservation after successful checkout lock
+            reservationRepository.delete(reservation);
+        } else {
+            // Clean any stale reservations for user
+            reservationRepository.deleteByUserId(userId);
+        }
+
+        BigDecimal totalAmount = subtotalAmount.subtract(discountAmount);
+        if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            totalAmount = BigDecimal.ZERO;
+        }
+
         Booking booking = Booking.builder()
                 .bookingNo(bookingNo)
                 .user(user)
-                .totalAmount(BigDecimal.ZERO)
+                .subtotalAmount(subtotalAmount)
+                .discountAmount(discountAmount)
+                .totalAmount(totalAmount)
+                .promoCode(appliedPromoCode)
                 .status(BookingStatus.PENDING)
                 .paymentStatus(PaymentStatus.UNPAID)
                 .paymentMethod(paymentSetting.getName())
@@ -66,8 +118,7 @@ public class BookingService {
 
         for (CartItem cartItem : cartItems) {
             BigDecimal price = cartItem.getProduct().getPrice();
-            BigDecimal subtotal = price.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
-            totalAmount = totalAmount.add(subtotal);
+            BigDecimal itemSubtotal = price.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
 
             BookingItem item = BookingItem.builder()
                     .booking(booking)
@@ -76,13 +127,12 @@ public class BookingService {
                     .price(price)
                     .quantity(cartItem.getQuantity())
                     .bookingDate(cartItem.getBookingDate())
-                    .subtotal(subtotal)
+                    .subtotal(itemSubtotal)
                     .build();
 
             bookingItems.add(item);
         }
 
-        booking.setTotalAmount(totalAmount);
         booking.setItems(bookingItems);
 
         Booking savedBooking = bookingRepository.save(booking);
@@ -175,6 +225,9 @@ public class BookingService {
                 .userId(booking.getUser().getId())
                 .username(booking.getUser().getUsername())
                 .userFullName(booking.getUser().getFullName())
+                .promoCode(booking.getPromoCode())
+                .subtotalAmount(booking.getSubtotalAmount() != null ? booking.getSubtotalAmount() : booking.getTotalAmount())
+                .discountAmount(booking.getDiscountAmount() != null ? booking.getDiscountAmount() : BigDecimal.ZERO)
                 .totalAmount(booking.getTotalAmount())
                 .status(booking.getStatus())
                 .paymentStatus(booking.getPaymentStatus())

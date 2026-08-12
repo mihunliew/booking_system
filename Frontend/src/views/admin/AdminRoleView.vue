@@ -107,7 +107,7 @@ const isEditMode = ref(false)
 const editingId = ref<number | null>(null)
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
 
-const availableModules = ['PRODUCTS', 'BOOKINGS', 'USERS', 'ROLES']
+const availableModules = ['PRODUCTS', 'BOOKINGS', 'PROMOCODES', 'USERS', 'ROLES']
 
 const form = ref<AdminRoleRequest>({
   name: '',

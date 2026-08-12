@@ -35,6 +35,10 @@ class AppConfig {
 
   // Public Settings
   static apiSettingsPaymentMethodsUrl: string = `${this.backendUrl}/settings/payment-methods`;
+
+  // Promo Code URLs
+  static apiApplyPromoUrl: string = `${this.backendUrl}/promocodes/apply`;
+  static apiAdminPromoCodesUrl: string = `${this.backendUrl}/admin/promocodes`;
 }
 
 export default AppConfig;

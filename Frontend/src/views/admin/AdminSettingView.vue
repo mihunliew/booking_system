@@ -36,9 +36,11 @@
                   {{ setting.active ? 'Active' : 'Disabled' }}
                 </span>
               </td>
-              <td class="actions-cell">
-                <button @click="openModal(setting)" class="btn btn-secondary btn-sm">Edit</button>
-                <button @click="deleteSetting(setting.id)" class="btn btn-danger btn-sm">Delete</button>
+              <td>
+                <div class="action-btn-group">
+                  <button @click="openModal(setting)" class="btn btn-secondary btn-sm">Edit</button>
+                  <button @click="deleteSetting(setting.id)" class="btn btn-danger btn-sm">Delete</button>
+                </div>
               </td>
             </tr>
             <tr v-if="settings.length === 0">
@@ -217,9 +219,10 @@ onMounted(() => {
 .icon-cell {
   font-size: 1.5rem;
 }
-.actions-cell {
+.action-btn-group {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 .status-badge {
   padding: 0.25rem 0.5rem;

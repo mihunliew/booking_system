@@ -15,6 +15,9 @@
       <router-link v-if="hasPermission('BOOKINGS', 'READ')" to="/admin/bookings" class="nav-link" active-class="active">
         📑 Booking Orders
       </router-link>
+      <router-link v-if="hasPermission('PROMOCODES', 'READ')" to="/admin/promocodes" class="nav-link" active-class="active">
+        🏷️ Promo Codes
+      </router-link>
       <router-link v-if="hasPermission('USERS', 'READ')" to="/admin/users" class="nav-link" active-class="active">
         👥 User Accounts
       </router-link>

@@ -215,18 +215,31 @@ export default class ApiHelper {
   // Common Error Handler
   private static handleError(e: any, url: string) {
     if (e instanceof AxiosError) {
-      ApiHelper.checkResponseCode(e.status);
+      ApiHelper.checkResponseCode(e.response?.status);
 
-      if (e.status !== 401) {
+      if (e.response?.status !== 401) {
         if (e.response?.data?.errors) {
-            const messageArray = Object.values(e.response.data.errors)
-              .flatMap((x: any) => x.map((y: any) => `${y}<br>`));
-            throw messageArray.join('');
+          if (typeof e.response.data.errors === 'object') {
+            const errorVals = Object.values(e.response.data.errors);
+            if (Array.isArray(errorVals) && errorVals.length > 0) {
+              const firstVal = errorVals[0];
+              if (Array.isArray(firstVal)) {
+                throw firstVal.join(', ');
+              } else if (typeof firstVal === 'string') {
+                throw errorVals.join(', ');
+              }
+            }
+          }
         }
-        throw e.response?.data?.message ?? e;
+        if (e.response?.data?.message) {
+          throw e.response.data.message;
+        }
+        throw e.message || 'An unexpected error occurred';
       }
     } else if (e instanceof Error) {
-      throw e.message ?? e.toString();
+      throw e.message || e.toString();
+    } else if (typeof e === 'string') {
+      throw e;
     }
     throw e;
   }

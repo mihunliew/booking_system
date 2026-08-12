@@ -16,12 +16,12 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<ProductDTO>> getAllProducts(@RequestParam(required = false) String category) {
+    public ResponseEntity<List<ProductDTO>> getAllProducts(@RequestParam(name = "category", required = false) String category) {
         return ResponseEntity.ok(productService.getAllProducts(category));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable(name = "id") Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 }
