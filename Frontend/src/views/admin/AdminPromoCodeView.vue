@@ -47,7 +47,7 @@
                 </span>
               </td>
               <td v-if="hasPermission('PROMOCODES', 'UPDATE') || hasPermission('PROMOCODES', 'DELETE')">
-                <div class="action-buttons">
+                <div class="action-btn-group">
                   <button v-if="hasPermission('PROMOCODES', 'UPDATE')" @click="openEditModal(promo)" class="btn btn-secondary btn-sm">
                     Edit
                   </button>
@@ -302,9 +302,11 @@ onMounted(() => {
   color: #ef4444;
 }
 
-.action-buttons {
+.action-btn-group {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .uppercase {

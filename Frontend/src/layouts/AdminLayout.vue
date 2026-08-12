@@ -22,5 +22,7 @@ import AdminSidebar from '../components/AdminSidebar.vue'
 
 .admin-main {
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
 }
 </style>

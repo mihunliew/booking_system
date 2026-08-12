@@ -44,6 +44,7 @@ import { hasPermission, isSuperAdmin } from '@/helpers/auth.helper'
 <style scoped>
 .admin-sidebar {
   width: 260px;
+  flex-shrink: 0;
   min-height: calc(100vh - 4rem);
   padding: 1.5rem;
   display: flex;

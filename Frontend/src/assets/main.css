@@ -232,12 +232,14 @@ body {
   text-transform: uppercase;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border-glass);
+  white-space: nowrap;
 }
 
 .custom-table td {
   padding: 1rem;
   font-size: 0.9rem;
   border-bottom: 1px solid var(--border-glass);
+  white-space: nowrap;
 }
 
 .custom-table tr:hover td {
