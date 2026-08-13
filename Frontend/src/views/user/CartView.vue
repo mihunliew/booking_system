@@ -87,6 +87,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { CartApi } from '../../services'
 import type { CartItemResponse } from '../../services'
+import { extractErrorMessage } from '../../helpers/error.helper'
 import Toast from '../../components/Toast.vue'
 
 const cartItems = ref<CartItemResponse[]>([])
@@ -104,7 +105,7 @@ const fetchCart = async () => {
   try {
     cartItems.value = await CartApi.getCart()
   } catch (err) {
-    console.error('Failed to load cart:', err)
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to load cart'), 'error')
   } finally {
     loading.value = false
   }
@@ -119,7 +120,7 @@ const updateItem = async (item: CartItemResponse) => {
     item.subtotal = updated.subtotal
     toastRef.value?.show('Cart item updated')
   } catch (err) {
-    toastRef.value?.show('Failed to update cart item', 'error')
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to update cart item'), 'error')
   }
 }
 
@@ -129,7 +130,7 @@ const removeItem = async (itemId: number) => {
     cartItems.value = cartItems.value.filter(i => i.id !== itemId)
     toastRef.value?.show('Item removed')
   } catch (err) {
-    toastRef.value?.show('Failed to remove item', 'error')
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to remove item'), 'error')
   }
 }
 
@@ -139,7 +140,7 @@ const clearCart = async () => {
     cartItems.value = []
     toastRef.value?.show('Cart cleared')
   } catch (err) {
-    toastRef.value?.show('Failed to clear cart', 'error')
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to clear cart'), 'error')
   }
 }
 

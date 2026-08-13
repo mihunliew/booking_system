@@ -163,6 +163,7 @@ public class BookingSummaryCalculationService {
 
         // Check availability and lock slot holds for 5 minutes during GET checkout
         for (CartItem cartItem : cartItems) {
+            com.n2n.booking.util.ProductValidationUtil.validateProductAvailability(cartItem.getProduct());
             Long productId = cartItem.getProduct().getId();
             java.time.LocalDate bookingDate = cartItem.getBookingDate();
             int stockQty = cartItem.getProduct().getStockQuantity() != null ? cartItem.getProduct().getStockQuantity() : 10;

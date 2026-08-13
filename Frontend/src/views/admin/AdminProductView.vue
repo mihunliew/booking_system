@@ -128,33 +128,36 @@ import DialogPlus from '../../components/DialogPlus.vue'
 import Toast from '../../components/Toast.vue'
 import { getCategoryBadgeColor } from '../../helpers/color.helper'
 import { hasPermission } from '../../helpers/auth.helper'
+import { extractErrorMessage } from '../../helpers/error.helper'
 
 const products = ref<ProductDTO[]>([])
 const loading = ref(true)
 const submitting = ref(false)
+const toastRef = ref<InstanceType<typeof Toast> | null>(null)
 const isModalOpen = ref(false)
 const isEditMode = ref(false)
 const editingId = ref<number | null>(null)
-const toastRef = ref<InstanceType<typeof Toast> | null>(null)
 
 const defaultImage = 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80'
 
 const form = ref<Partial<ProductDTO>>({
   name: '',
-  category: 'Rooms',
-  price: 0,
-  capacity: 1,
-  imageUrl: '',
   description: '',
+  price: 0,
+  category: 'Rooms',
+  capacity: 1,
+  stockQuantity: 10,
+  imageUrl: '',
   status: 'AVAILABLE'
 })
 
 const fetchProducts = async () => {
   loading.value = true
   try {
-    products.value = await AdminApi.getAllProducts()
-  } catch (err) {
-    console.error('Failed to fetch products:', err)
+    products.value = await ProductApi.getProducts()
+  } catch (err: any) {
+    console.error('Failed to load products:', err)
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to load products'), 'error')
   } finally {
     loading.value = false
   }
@@ -165,12 +168,12 @@ const openCreateModal = () => {
   editingId.value = null
   form.value = {
     name: '',
+    description: '',
+    price: 0,
     category: 'Rooms',
-    price: 99.00,
-    capacity: 2,
+    capacity: 1,
     stockQuantity: 10,
     imageUrl: '',
-    description: '',
     status: 'AVAILABLE'
   }
   isModalOpen.value = true
@@ -186,7 +189,7 @@ const openEditModal = (product: ProductDTO) => {
 const saveProduct = async () => {
   submitting.value = true
   try {
-    if (isEditMode.value && editingId.value) {
+    if (editingId.value) {
       const updated = await AdminApi.updateProduct(editingId.value, form.value as ProductDTO)
       const index = products.value.findIndex(p => p.id === editingId.value)
       if (index !== -1) products.value[index] = updated
@@ -198,7 +201,7 @@ const saveProduct = async () => {
     }
     isModalOpen.value = false
   } catch (err: any) {
-    toastRef.value?.show(err.response?.data?.message || 'Failed to save product', 'error')
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to save product'), 'error')
   } finally {
     submitting.value = false
   }
@@ -210,8 +213,8 @@ const deleteProduct = async (id: number) => {
     await AdminApi.deleteProduct(id)
     products.value = products.value.filter(p => p.id !== id)
     toastRef.value?.show('Product deleted')
-  } catch (err) {
-    toastRef.value?.show('Failed to delete product', 'error')
+  } catch (err: any) {
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to delete product'), 'error')
   }
 }
 

@@ -60,6 +60,7 @@ public class BookingService {
 
         // 1. Initial Check & Lock slot holds for each cart item
         for (CartItem cartItem : cartItems) {
+            com.n2n.booking.util.ProductValidationUtil.validateProductAvailability(cartItem.getProduct());
             Long productId = cartItem.getProduct().getId();
             LocalDate bookingDate = cartItem.getBookingDate();
             int stockQty = cartItem.getProduct().getStockQuantity() != null ? cartItem.getProduct().getStockQuantity() : 10;

@@ -38,13 +38,15 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductDTO.ProductAvailabilityResponse getAvailability(Long productId, java.time.LocalDate bookingDate, Long currentUserId) {
+    public ProductDTO.ProductAvailabilityResponse getAvailability(Long productId, java.time.LocalDate bookingDate,
+            Long currentUserId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
         int stockQty = product.getStockQuantity() != null ? product.getStockQuantity() : 10;
         int bookedCount = bookingItemRepository.sumConfirmedBookedQuantity(productId, bookingDate);
-        int heldCount = productSlotHoldRepository.sumActiveHeldQuantityExcludingUser(productId, bookingDate, currentUserId, java.time.LocalDateTime.now());
+        int heldCount = productSlotHoldRepository.sumActiveHeldQuantityExcludingUser(productId, bookingDate,
+                currentUserId, java.time.LocalDateTime.now());
 
         int availableSlots = stockQty - (bookedCount + heldCount);
         if (availableSlots < 0) {

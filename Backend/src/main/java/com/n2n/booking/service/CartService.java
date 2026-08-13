@@ -90,6 +90,7 @@ public class CartService {
     }
 
     private void validateAvailability(Product product, LocalDate bookingDate, int requiredQty, Long userId) {
+        com.n2n.booking.util.ProductValidationUtil.validateProductAvailability(product);
         int stockQty = product.getStockQuantity() != null ? product.getStockQuantity() : 10;
         int bookedCount = bookingItemRepository.sumConfirmedBookedQuantity(product.getId(), bookingDate);
         int heldCount = productSlotHoldRepository.sumActiveHeldQuantityExcludingUser(product.getId(), bookingDate, userId, LocalDateTime.now());

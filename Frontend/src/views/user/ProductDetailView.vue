@@ -74,6 +74,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ProductApi, CartApi } from '../../services'
 import type { ProductDTO, ProductAvailabilityResponse } from '../../services'
 import { isAuthenticated } from '../../helpers/auth.helper'
+import { extractErrorMessage } from '../../helpers/error.helper'
 import Toast from '../../components/Toast.vue'
 
 const route = useRoute()
@@ -154,7 +155,7 @@ const addToCart = async () => {
     toastRef.value?.show('Added to cart successfully!')
     await checkAvailability()
   } catch (err: any) {
-    const msg = err.response?.data?.message || err.message || 'Failed to add to cart'
+    const msg = extractErrorMessage(err, 'Failed to add to cart')
     toastRef.value?.show(msg, 'error')
   } finally {
     submitting.value = false

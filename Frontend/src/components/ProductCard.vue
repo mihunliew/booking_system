@@ -18,8 +18,13 @@
         <router-link :to="`/products/${product.id}`" class="btn btn-secondary btn-sm btn-full">
           View Details
         </router-link>
-        <button @click="$emit('add-to-cart', product)" class="btn btn-primary btn-sm btn-full">
-          Book Now
+        <button
+          @click="$emit('add-to-cart', product)"
+          class="btn btn-sm btn-full"
+          :class="isNotAvailable ? 'btn-disabled' : 'btn-primary'"
+          :disabled="isNotAvailable"
+        >
+          {{ isNotAvailable ? (product.status === 'MAINTENANCE' ? 'Maintenance' : 'Unavailable') : 'Book Now' }}
         </button>
       </div>
     </div>
@@ -47,6 +52,10 @@ const categoryStyle = computed(() => {
     backgroundColor: badge.bg,
     color: badge.color
   }
+})
+
+const isNotAvailable = computed(() => {
+  return !!props.product.status && props.product.status !== 'AVAILABLE'
 })
 
 const truncatedDescription = computed(() => {

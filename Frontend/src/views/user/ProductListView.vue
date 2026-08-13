@@ -96,7 +96,8 @@ import DialogPlus from '../../components/DialogPlus.vue'
 import Toast from '../../components/Toast.vue'
 import { ProductApi, CartApi } from '../../services'
 import type { ProductDTO } from '../../services'
-import { isAuthenticated } from '../../helpers/auth.helper'
+import { extractErrorMessage } from '../../helpers/error.helper'
+import { isAuthenticated } from '@/helpers/auth.helper.js'
 
 const router = useRouter()
 const products = ref<ProductDTO[]>([])
@@ -180,7 +181,7 @@ const submitAddToCart = async () => {
     isModalOpen.value = false
     toastRef.value?.show('Added to cart successfully!')
   } catch (err: any) {
-    toastRef.value?.show(err.response?.data?.message || 'Failed to add to cart', 'error')
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to add to cart'), 'error')
   } finally {
     submitting.value = false
   }

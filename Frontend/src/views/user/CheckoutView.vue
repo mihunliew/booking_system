@@ -128,6 +128,7 @@ import { BookingApi, SettingApi, PromoCodeApi } from '../../services'
 import type { BookingSummaryResponse, SettingResponse } from '../../services'
 import Toast from '../../components/Toast.vue'
 import DialogPlus from '../../components/DialogPlus.vue'
+import { extractErrorMessage } from '../../helpers/error.helper'
 
 const router = useRouter()
 const summary = ref<BookingSummaryResponse | null>(null)
@@ -164,7 +165,7 @@ const fetchCheckoutData = async () => {
     }
   } catch (err: any) {
     console.error('Failed to load checkout summary:', err)
-    const msg = typeof err === 'string' ? err : (err.message || 'Failed to load checkout summary')
+    const msg = extractErrorMessage(err, 'Failed to load checkout summary')
     errorMessage.value = msg
     showErrorDialog.value = true
   } finally {
@@ -185,7 +186,7 @@ const applyPromoCode = async () => {
       toastRef.value?.show(result.message || 'Invalid promo code', 'error')
     }
   } catch (err: any) {
-    const errorMsg = typeof err === 'string' ? err : (err.message || 'Failed to apply promo code');
+    const errorMsg = extractErrorMessage(err, 'Failed to apply promo code')
     toastRef.value?.show(errorMsg, 'error')
   } finally {
     applyingPromo.value = false
@@ -202,7 +203,7 @@ const removePromoCode = async () => {
     summary.value = result
     toastRef.value?.show('Promo code removed')
   } catch (err: any) {
-    toastRef.value?.show('Failed to remove promo code', 'error')
+    toastRef.value?.show(extractErrorMessage(err, 'Failed to remove promo code'), 'error')
   } finally {
     applyingPromo.value = false
   }
@@ -234,7 +235,7 @@ const confirmCheckout = async () => {
       }, 800)
     }
   } catch (err: any) {
-    const errorMsg = typeof err === 'string' ? err : (err.message || 'Checkout failed');
+    const errorMsg = extractErrorMessage(err, 'Checkout failed')
     errorMessage.value = errorMsg
     showErrorDialog.value = true
   } finally {
