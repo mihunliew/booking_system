@@ -16,7 +16,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBookingNo(String bookingNo);
     List<Booking> findAllByOrderByCreatedAtDesc();
 
-    @Query("SELECT SUM(b.totalAmount) FROM Booking b WHERE b.paymentStatus = 'PAID'")
+    @Query("SELECT SUM(b.totalAmount - COALESCE(b.refundedAmount, 0)) FROM Booking b WHERE b.paymentStatus IN (com.n2n.booking.enums.PaymentStatus.PAID, com.n2n.booking.enums.PaymentStatus.PARTIALLY_REFUNDED)")
     BigDecimal calculateTotalRevenue();
 
     Long countByStatus(BookingStatus status);
