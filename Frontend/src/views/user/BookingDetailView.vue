@@ -63,7 +63,17 @@
         </div>
 
         <div class="total-summary-box">
-          <div class="summary-line">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span>${{ subtotalDisplay.toFixed(2) }}</span>
+          </div>
+
+          <div v-if="booking.discountAmount && booking.discountAmount > 0" class="summary-row text-success">
+            <span>Discount <small v-if="booking.promoCode">({{ booking.promoCode }})</small></span>
+            <span>-${{ booking.discountAmount.toFixed(2) }}</span>
+          </div>
+
+          <div class="summary-line grand-total-row">
             <span>Total Payable</span>
             <span class="total-price">${{ booking.totalAmount.toFixed(2) }}</span>
           </div>
@@ -85,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { BookingApi, AdminApi } from '../../services'
 import type { BookingResponse } from '../../services'
@@ -100,6 +110,14 @@ const booking = ref<BookingResponse | null>(null)
 const loading = ref(true)
 const submitting = ref(false)
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
+
+const subtotalDisplay = computed(() => {
+  if (!booking.value) return 0
+  if (booking.value.subtotalAmount && booking.value.subtotalAmount > 0) {
+    return booking.value.subtotalAmount
+  }
+  return (booking.value.items || []).reduce((acc, item) => acc + (item.subtotal || 0), 0)
+})
 
 const fetchBooking = async () => {
   loading.value = true
@@ -249,15 +267,32 @@ onMounted(() => {
 }
 
 .total-summary-box {
-  width: 280px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
-.summary-line {
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.summary-row.text-success {
+  color: #34d399;
+}
+
+.grand-total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-glass);
 }
 
 .total-price {
@@ -269,5 +304,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 </style>

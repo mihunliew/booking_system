@@ -335,9 +335,11 @@ const selectTab = (tabValue: string) => {
 }
 
 const canRefund = (p: PaymentResponse) => {
-  const isPaid = p.paymentStatus === PaymentStatus.PAID || p.paymentStatus === PaymentStatus.PARTIALLY_REFUNDED
-  const hasBalance = (p.totalAmount - (p.refundedAmount || 0)) > 0.01
-  return isPaid && hasBalance
+  // Refund can ONLY be performed ONCE. If already refunded (full or partial), disable further refunds.
+  const isPaid = p.paymentStatus === PaymentStatus.PAID
+  const hasNeverBeenRefunded = !p.refundedAmount || p.refundedAmount === 0
+  const isNotRefundedStatus = p.paymentStatus !== PaymentStatus.REFUNDED && p.paymentStatus !== PaymentStatus.PARTIALLY_REFUNDED
+  return isPaid && hasNeverBeenRefunded && isNotRefundedStatus
 }
 
 const openInspectModal = (p: PaymentResponse) => {

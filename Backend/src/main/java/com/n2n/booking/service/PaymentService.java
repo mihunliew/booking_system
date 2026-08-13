@@ -2,6 +2,7 @@ package com.n2n.booking.service;
 
 import com.n2n.booking.dto.PaymentDTOs;
 import com.n2n.booking.entity.Booking;
+import com.n2n.booking.enums.BookingStatus;
 import com.n2n.booking.enums.PaymentStatus;
 import com.n2n.booking.exception.ResourceNotFoundException;
 import com.n2n.booking.repository.BookingRepository;
@@ -17,6 +18,7 @@ import java.util.List;
 public class PaymentService {
 
     private final BookingRepository bookingRepository;
+    private final StripeService stripeService;
 
     @Transactional(readOnly = true)
     public List<PaymentDTOs.PaymentResponse> getAllPayments(PaymentStatus status) {
@@ -65,20 +67,41 @@ public class PaymentService {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
 
-        BigDecimal currentRefunded = booking.getRefundedAmount() != null ? booking.getRefundedAmount() : BigDecimal.ZERO;
-        BigDecimal newRefunded = currentRefunded.add(request.getAmount());
-
-        if (newRefunded.compareTo(booking.getTotalAmount()) > 0) {
-            throw new IllegalArgumentException("Total refunded amount cannot exceed total booking amount of $" + booking.getTotalAmount());
+        // 1. One-time refund constraint: check if already refunded or partially refunded
+        if ((booking.getRefundedAmount() != null && booking.getRefundedAmount().compareTo(BigDecimal.ZERO) > 0) ||
+            booking.getPaymentStatus() == PaymentStatus.REFUNDED ||
+            booking.getPaymentStatus() == PaymentStatus.PARTIALLY_REFUNDED) {
+            throw new com.n2n.booking.exception.BadRequestException("This booking payment has already been refunded once and cannot be refunded again.");
         }
 
-        booking.setRefundedAmount(newRefunded);
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new com.n2n.booking.exception.BadRequestException("Refund amount must be greater than 0");
+        }
 
-        if (newRefunded.compareTo(booking.getTotalAmount()) >= 0) {
+        if (request.getAmount().compareTo(booking.getTotalAmount()) > 0) {
+            throw new com.n2n.booking.exception.BadRequestException("Refund amount cannot exceed total booking amount of $" + booking.getTotalAmount());
+        }
+
+        // 2. Call Stripe Refund API if Stripe PaymentIntent ID exists
+        if (booking.getStripePaymentIntentId() != null && !booking.getStripePaymentIntentId().trim().isEmpty()) {
+            try {
+                stripeService.processRefund(booking.getStripePaymentIntentId(), request.getAmount());
+            } catch (Exception e) {
+                throw new com.n2n.booking.exception.BadRequestException("Stripe refund execution failed: " + e.getMessage());
+            }
+        }
+
+        // 3. Persist refund state in DB
+        booking.setRefundedAmount(request.getAmount());
+
+        if (request.getAmount().compareTo(booking.getTotalAmount()) >= 0) {
             booking.setPaymentStatus(PaymentStatus.REFUNDED);
         } else {
             booking.setPaymentStatus(PaymentStatus.PARTIALLY_REFUNDED);
         }
+
+        // Automatically set booking status to CANCELLED upon refund
+        booking.setStatus(BookingStatus.CANCELLED);
 
         Booking saved = bookingRepository.save(booking);
         return mapToPaymentResponse(saved);

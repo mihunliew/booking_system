@@ -65,6 +65,41 @@ public class StripeService {
             }
         }
 
+        // Apply promo code discount if present
+        if (booking.getDiscountAmount() != null && booking.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
+            long discountInCents = booking.getDiscountAmount().multiply(new BigDecimal(100)).longValue();
+            String promoName = booking.getPromoCode() != null ? booking.getPromoCode() : "PROMO";
+
+            com.stripe.param.CouponCreateParams couponParams = com.stripe.param.CouponCreateParams.builder()
+                    .setAmountOff(discountInCents)
+                    .setCurrency("myr")
+                    .setName("Promo Code Discount (" + promoName + ")")
+                    .setDuration(com.stripe.param.CouponCreateParams.Duration.ONCE)
+                    .build();
+
+            com.stripe.model.Coupon coupon = com.stripe.model.Coupon.create(couponParams);
+
+            paramsBuilder.addDiscount(
+                    SessionCreateParams.Discount.builder()
+                            .setCoupon(coupon.getId())
+                            .build()
+            );
+        }
+
         return Session.create(paramsBuilder.build());
+    }
+
+    public com.stripe.model.Refund processRefund(String stripePaymentIntentId, BigDecimal amount) throws Exception {
+        if (stripePaymentIntentId == null || stripePaymentIntentId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Stripe PaymentIntent ID is missing for this booking");
+        }
+
+        long amountInCents = amount.multiply(new BigDecimal(100)).longValue();
+        com.stripe.param.RefundCreateParams params = com.stripe.param.RefundCreateParams.builder()
+                .setPaymentIntent(stripePaymentIntentId)
+                .setAmount(amountInCents)
+                .build();
+
+        return com.stripe.model.Refund.create(params);
     }
 }
