@@ -530,7 +530,7 @@ When adding a new module (e.g., "Promotions"), follow this exact order:
 | Module Name (RBAC) | Entity | Public API | Admin API | Admin Controller |
 |---|---|---|---|---|
 | — | `User` | — | `/api/admin/users` | `AdminUserController` |
-| `PRODUCTS` | `Product` | `/api/products` | `/api/admin/products` | `AdminProductController` |
+| `PRODUCTS` | `Product` | `/api/products` | `/api/admin/products`, `/api/admin/products/{id}/schedule` | `AdminProductController` |
 | `BOOKINGS` | `Booking` + `BookingItem` | `/api/bookings` | `/api/admin/bookings` | `AdminBookingController` |
 | `USERS` | `User` | — | `/api/admin/users` | `AdminUserController` |
 | `ROLES` | `AdminRole` + `AdminPermission` | — | `/api/admin/roles` | `AdminRoleController` (SUPERADMIN only) |

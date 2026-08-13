@@ -36,6 +36,10 @@ public class Product {
     @Column(nullable = false)
     private Integer capacity;
 
+    @Column(name = "stock_quantity", nullable = false)
+    @Builder.Default
+    private Integer stockQuantity = 10;
+
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 

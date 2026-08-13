@@ -31,6 +31,8 @@ public class BookingSummaryCalculationService {
     private final PromoCodeRepository promoCodeRepository;
     private final PromoCodeReservationRepository reservationRepository;
     private final UserRepository userRepository;
+    private final com.n2n.booking.repository.ProductSlotHoldRepository productSlotHoldRepository;
+    private final com.n2n.booking.repository.BookingItemRepository bookingItemRepository;
 
     @Transactional
     public BookingSummaryDTOs.BookingSummaryResponse calculateAndApplyPromo(Long userId, String codeInput) {
@@ -153,8 +155,39 @@ public class BookingSummaryCalculationService {
                 .build();
     }
 
+    @Transactional
     public BookingSummaryDTOs.BookingSummaryResponse getCheckoutSummary(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
+
+        // Check availability and lock slot holds for 5 minutes during GET checkout
+        for (CartItem cartItem : cartItems) {
+            Long productId = cartItem.getProduct().getId();
+            java.time.LocalDate bookingDate = cartItem.getBookingDate();
+            int stockQty = cartItem.getProduct().getStockQuantity() != null ? cartItem.getProduct().getStockQuantity() : 10;
+
+            int bookedCount = bookingItemRepository.sumConfirmedBookedQuantity(productId, bookingDate);
+            int heldCount = productSlotHoldRepository.sumActiveHeldQuantityExcludingUser(productId, bookingDate, userId, LocalDateTime.now());
+            int availableUnits = stockQty - (bookedCount + heldCount);
+
+            if (availableUnits < cartItem.getQuantity()) {
+                throw new BadRequestException("Sorry, only " + Math.max(0, availableUnits) + " unit(s) of " + cartItem.getProduct().getName() + " are available for " + bookingDate + ". Please adjust your cart.");
+            }
+
+            // Create/update 5-minute slot hold for user
+            com.n2n.booking.entity.ProductSlotHold hold = productSlotHoldRepository
+                    .findByUserIdAndProductIdAndBookingDate(userId, productId, bookingDate)
+                    .orElse(com.n2n.booking.entity.ProductSlotHold.builder()
+                            .user(user)
+                            .product(cartItem.getProduct())
+                            .bookingDate(bookingDate)
+                            .build());
+            hold.setQuantity(cartItem.getQuantity());
+            hold.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+            productSlotHoldRepository.saveAndFlush(hold);
+        }
+
         List<BookingSummaryDTOs.SummaryItemResponse> itemDTOs = cartItems.stream()
                 .map(this::mapToSummaryItem)
                 .collect(Collectors.toList());

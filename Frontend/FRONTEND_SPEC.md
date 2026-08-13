@@ -516,7 +516,7 @@ All methods automatically:
 ### Existing DTOs
 
 **Auth**: `LoginRequest`, `SignupRequest`, `JwtResponse`, `UserResponse`
-**Product**: `ProductDTO` (id, name, description, price, category, capacity, imageUrl, status)
+**Product**: `ProductDTO`, `ProductAvailabilityResponse`, `DayScheduleDTO`, `ProductMonthlyScheduleResponse`
 **Cart**: `AddToCartRequest`, `UpdateCartRequest`, `CartItemResponse`
 **Booking**: `CheckoutRequest`, `PayBookingRequest`, `UpdateStatusRequest`, `BookingItemResponse`, `BookingResponse`
 **Admin**: `AdminDashboardDTO`

@@ -85,8 +85,13 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Capacity *</label>
-            <input v-model.number="form.capacity" type="number" min="1" class="form-input" required />
+            <label class="form-label">Guest Capacity *</label>
+            <input v-model.number="form.capacity" type="number" min="1" class="form-input" required title="Guest capacity per unit" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Daily Available Units *</label>
+            <input v-model.number="form.stockQuantity" type="number" min="1" class="form-input" required title="Total units/rooms available per day" />
           </div>
         </div>
 
@@ -163,6 +168,7 @@ const openCreateModal = () => {
     category: 'Rooms',
     price: 99.00,
     capacity: 2,
+    stockQuantity: 10,
     imageUrl: '',
     description: '',
     status: 'AVAILABLE'

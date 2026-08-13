@@ -13,9 +13,12 @@ import com.n2n.booking.repository.BookingRepository;
 import com.n2n.booking.repository.CartItemRepository;
 import com.n2n.booking.repository.UserRepository;
 import com.n2n.booking.entity.GeneralSetting;
+import com.n2n.booking.entity.ProductSlotHold;
 import com.n2n.booking.entity.PromoCode;
 import com.n2n.booking.entity.PromoCodeReservation;
+import com.n2n.booking.repository.BookingItemRepository;
 import com.n2n.booking.repository.GeneralSettingRepository;
+import com.n2n.booking.repository.ProductSlotHoldRepository;
 import com.n2n.booking.repository.PromoCodeRepository;
 import com.n2n.booking.repository.PromoCodeReservationRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -41,6 +45,8 @@ public class BookingService {
     private final GeneralSettingRepository settingRepository;
     private final PromoCodeRepository promoCodeRepository;
     private final PromoCodeReservationRepository reservationRepository;
+    private final ProductSlotHoldRepository productSlotHoldRepository;
+    private final BookingItemRepository bookingItemRepository;
 
     @Transactional
     public BookingDTOs.BookingResponse checkout(Long userId, BookingDTOs.CheckoutRequest request) {
@@ -50,6 +56,33 @@ public class BookingService {
         List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
         if (cartItems.isEmpty()) {
             throw new BadRequestException("Cannot checkout with an empty cart!");
+        }
+
+        // 1. Initial Check & Lock slot holds for each cart item
+        for (CartItem cartItem : cartItems) {
+            Long productId = cartItem.getProduct().getId();
+            LocalDate bookingDate = cartItem.getBookingDate();
+            int stockQty = cartItem.getProduct().getStockQuantity() != null ? cartItem.getProduct().getStockQuantity() : 10;
+
+            int bookedCount = bookingItemRepository.sumConfirmedBookedQuantity(productId, bookingDate);
+            int heldCount = productSlotHoldRepository.sumActiveHeldQuantityExcludingUser(productId, bookingDate, userId, LocalDateTime.now());
+            int availableUnits = stockQty - (bookedCount + heldCount);
+
+            if (availableUnits < cartItem.getQuantity()) {
+                throw new BadRequestException("Sorry, only " + Math.max(0, availableUnits) + " unit(s) of " + cartItem.getProduct().getName() + " are available for " + bookingDate + ". Please adjust your quantity.");
+            }
+
+            // Lock slot for 5 minutes (keyed by user_id + product_id + booking_date)
+            ProductSlotHold hold = productSlotHoldRepository
+                    .findByUserIdAndProductIdAndBookingDate(userId, productId, bookingDate)
+                    .orElse(ProductSlotHold.builder()
+                            .user(user)
+                            .product(cartItem.getProduct())
+                            .bookingDate(bookingDate)
+                            .build());
+            hold.setQuantity(cartItem.getQuantity());
+            hold.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+            productSlotHoldRepository.saveAndFlush(hold);
         }
 
         GeneralSetting paymentSetting = settingRepository.findById(request.getPaymentSettingId())
@@ -135,6 +168,21 @@ public class BookingService {
 
         booking.setItems(bookingItems);
 
+        // 2. Final Double-Check Validation before committing & returning to frontend
+        for (CartItem cartItem : cartItems) {
+            Long productId = cartItem.getProduct().getId();
+            LocalDate bookingDate = cartItem.getBookingDate();
+            int stockQty = cartItem.getProduct().getStockQuantity() != null ? cartItem.getProduct().getStockQuantity() : 10;
+
+            int bookedCount = bookingItemRepository.sumConfirmedBookedQuantity(productId, bookingDate);
+            // Count total active held units across ALL users (passing null for userId)
+            int totalHeldCount = productSlotHoldRepository.sumActiveHeldQuantityExcludingUser(productId, bookingDate, null, LocalDateTime.now());
+
+            if ((bookedCount + totalHeldCount) > stockQty) {
+                throw new BadRequestException("High concurrency alert: " + cartItem.getProduct().getName() + " on " + bookingDate + " has just been booked by another customer simultaneously. Please re-check availability.");
+            }
+        }
+
         Booking savedBooking = bookingRepository.save(booking);
         cartItemRepository.deleteByUserId(userId);
 
@@ -183,6 +231,9 @@ public class BookingService {
         if (request.getPaymentMethod() != null) {
             booking.setPaymentMethod(request.getPaymentMethod());
         }
+
+        // Release slot holds upon successful payment
+        productSlotHoldRepository.deleteByUserId(userId);
 
         Booking updated = bookingRepository.save(booking);
         return mapToDTO(updated);

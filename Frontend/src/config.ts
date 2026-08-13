@@ -16,6 +16,7 @@ class AppConfig {
 
   // Product URLs
   static apiGetProductUrl: string = `${this.backendUrl}/products`;
+  static apiGetProductAvailabilityUrl = (id: number, date: string) => `${this.backendUrl}/products/${id}/availability?date=${date}`;
 
   // Cart URLs
   static apiGetCartUrl: string = `${this.backendUrl}/cart`;
@@ -28,6 +29,7 @@ class AppConfig {
   // Admin URLs
   static apiAdminUsersUrl: string = `${this.backendUrl}/admin/users`;
   static apiAdminProductsUrl: string = `${this.backendUrl}/admin/products`;
+  static apiAdminGetProductScheduleUrl = (id: number, year: number, month: number) => `${this.backendUrl}/admin/products/${id}/schedule?year=${year}&month=${month}`;
   static apiAdminBookingsUrl: string = `${this.backendUrl}/admin/bookings`;
   static apiAdminDashboardUrl: string = `${this.backendUrl}/admin/dashboard`;
   static apiAdminRolesUrl: string = `${this.backendUrl}/admin/roles`;

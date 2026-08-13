@@ -34,6 +34,49 @@ public class ProductDTO {
     @Min(value = 1, message = "Capacity must be at least 1")
     private Integer capacity;
 
+    private Integer stockQuantity;
+
     private String imageUrl;
     private String status;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ProductAvailabilityResponse {
+        private Long productId;
+        private java.time.LocalDate bookingDate;
+        private Integer capacity;
+        private Integer stockQuantity;
+        private Integer bookedCount;
+        private Integer heldCount;
+        private Integer availableSlots;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ProductMonthlyScheduleResponse {
+        private Long productId;
+        private String productName;
+        private int year;
+        private int month;
+        private int totalStockQuantity;
+        private java.util.List<DayScheduleDTO> days;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class DayScheduleDTO {
+        private java.time.LocalDate date;
+        private int stockQuantity;
+        private int bookedCount;
+        private int heldCount;
+        private int availableSlots;
+        @com.fasterxml.jackson.annotation.JsonProperty("isSoldOut")
+        private boolean isSoldOut;
+    }
 }

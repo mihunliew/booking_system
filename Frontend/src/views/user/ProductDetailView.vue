@@ -20,12 +20,14 @@
 
         <div class="specs-grid">
           <div class="spec-card glass-card">
-            <span class="spec-label">Capacity Limit</span>
-            <span class="spec-value">👥 {{ product.capacity }} Persons</span>
+            <span class="spec-label">Guest Capacity</span>
+            <span class="spec-value">👥 {{ product.capacity }} Guest(s) / Unit</span>
           </div>
           <div class="spec-card glass-card">
-            <span class="spec-label">Status</span>
-            <span class="spec-value">🟢 {{ product.status }}</span>
+            <span class="spec-label">Daily Available Inventory</span>
+            <span class="spec-value" :class="availableSlots <= 0 ? 'status-sold-out' : 'status-available'">
+              📦 {{ fetchingAvailability ? 'Checking...' : (availableSlots + ' Unit(s) Available') }}
+            </span>
           </div>
         </div>
 
@@ -33,16 +35,30 @@
           <h3>Reserve Slot</h3>
           <div class="form-group">
             <label class="form-label">Select Date</label>
-            <input v-model="bookingDate" type="date" class="form-input" :min="minDate" />
+            <input v-model="bookingDate" type="date" class="form-input" :min="minDate" @change="checkAvailability" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Quantity</label>
-            <input v-model.number="quantity" type="number" min="1" :max="product.capacity" class="form-input" />
+            <label class="form-label">
+              Quantity (Units)
+              <small class="stock-hint">(Max {{ availableSlots }} available for {{ bookingDate }})</small>
+            </label>
+            <input
+              v-model.number="quantity"
+              type="number"
+              min="1"
+              :max="availableSlots"
+              class="form-input"
+              :disabled="availableSlots <= 0"
+            />
           </div>
 
-          <button @click="addToCart" class="btn btn-primary btn-full btn-lg" :disabled="submitting">
-            {{ submitting ? 'Adding...' : 'Add to Cart' }}
+          <button
+            @click="addToCart"
+            class="btn btn-primary btn-full btn-lg"
+            :disabled="submitting || availableSlots <= 0 || quantity > availableSlots"
+          >
+            {{ submitting ? 'Adding...' : (availableSlots <= 0 ? 'Sold Out for Selected Date' : 'Add to Cart') }}
           </button>
         </div>
       </div>
@@ -53,10 +69,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ProductApi, CartApi } from '../../services'
-import type { ProductDTO } from '../../services'
+import type { ProductDTO, ProductAvailabilityResponse } from '../../services'
 import { isAuthenticated } from '../../helpers/auth.helper'
 import Toast from '../../components/Toast.vue'
 
@@ -64,6 +80,8 @@ const route = useRoute()
 const router = useRouter()
 
 const product = ref<ProductDTO | null>(null)
+const availability = ref<ProductAvailabilityResponse | null>(null)
+const fetchingAvailability = ref(false)
 const loading = ref(true)
 const submitting = ref(false)
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
@@ -75,16 +93,43 @@ const quantity = ref(1)
 
 const defaultImage = 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80'
 
+const availableSlots = computed(() => {
+  if (availability.value) {
+    return availability.value.availableSlots
+  }
+  return product.value?.stockQuantity || 10
+})
+
+const checkAvailability = async () => {
+  if (!product.value || !bookingDate.value) return
+  fetchingAvailability.value = true
+  try {
+    availability.value = await ProductApi.getProductAvailability(product.value.id, bookingDate.value)
+    if (quantity.value > availableSlots.value) {
+      quantity.value = Math.max(1, availableSlots.value)
+    }
+  } catch (err) {
+    console.error('Failed to fetch availability:', err)
+  } finally {
+    fetchingAvailability.value = false
+  }
+}
+
 const fetchProduct = async () => {
   loading.value = true
   try {
     product.value = await ProductApi.getProductById(route.params.id as string)
+    await checkAvailability()
   } catch (err) {
     console.error('Failed to load product details:', err)
   } finally {
     loading.value = false
   }
 }
+
+watch(bookingDate, () => {
+  checkAvailability()
+})
 
 const addToCart = async () => {
   if (!isAuthenticated()) {
@@ -94,6 +139,11 @@ const addToCart = async () => {
   
   if (!product.value) return
 
+  if (quantity.value > availableSlots.value) {
+    toastRef.value?.show(`Sorry, only ${availableSlots.value} unit(s) available for ${bookingDate.value}`, 'error')
+    return
+  }
+
   submitting.value = true
   try {
     await CartApi.addToCart({
@@ -102,8 +152,10 @@ const addToCart = async () => {
       bookingDate: bookingDate.value
     })
     toastRef.value?.show('Added to cart successfully!')
+    await checkAvailability()
   } catch (err: any) {
-    toastRef.value?.show(err.response?.data?.message || 'Failed to add to cart', 'error')
+    const msg = err.response?.data?.message || err.message || 'Failed to add to cart'
+    toastRef.value?.show(msg, 'error')
   } finally {
     submitting.value = false
   }
@@ -214,5 +266,19 @@ onMounted(() => {
 .booking-box h3 {
   font-size: 1.1rem;
   margin-bottom: 1rem;
+}
+
+.status-available {
+  color: #34d399;
+}
+
+.status-sold-out {
+  color: #f87171;
+}
+
+.stock-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
 }
 </style>

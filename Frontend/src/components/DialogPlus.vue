@@ -4,7 +4,7 @@
       <div class="modal-content glass-panel" :style="{ maxWidth: maxWidth }">
         <div class="modal-header">
           <h3 class="modal-title">{{ title }}</h3>
-          <button @click="close" class="close-btn" type="button">&times;</button>
+          <button v-if="showCloseBtn && closeOnBackdrop" @click="close" class="close-btn" type="button">&times;</button>
         </div>
 
         <div class="modal-body">
@@ -52,6 +52,7 @@ const props = withDefaults(defineProps<{
   submitting?: boolean;
   continueBtnClass?: string;
   closeOnBackdrop?: boolean;
+  showCloseBtn?: boolean;
 }>(), {
   isOpen: false,
   title: '',
@@ -61,7 +62,8 @@ const props = withDefaults(defineProps<{
   continueDisabled: false,
   submitting: false,
   continueBtnClass: 'btn-primary',
-  closeOnBackdrop: true
+  closeOnBackdrop: true,
+  showCloseBtn: true
 })
 
 const emit = defineEmits<{

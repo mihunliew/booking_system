@@ -43,4 +43,12 @@ public class AdminProductController {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{id}/schedule")
+    public ResponseEntity<ProductDTO.ProductMonthlyScheduleResponse> getMonthlySchedule(
+            @PathVariable Long id,
+            @RequestParam int year,
+            @RequestParam int month) {
+        return ResponseEntity.ok(productService.getMonthlySchedule(id, year, month));
+    }
 }

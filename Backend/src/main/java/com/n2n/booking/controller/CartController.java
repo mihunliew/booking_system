@@ -30,7 +30,7 @@ public class CartController {
         return ResponseEntity.ok(cartService.addToCart(currentUser.getId(), request));
     }
 
-    @PutMapping("/items/{id}")
+    @PutMapping({ "/{id}", "/items/{id}" })
     public ResponseEntity<CartDTOs.CartItemResponse> updateCartItem(
             @AuthenticationPrincipal UserPrincipal currentUser,
             @PathVariable(name = "id") Long id,
@@ -38,7 +38,7 @@ public class CartController {
         return ResponseEntity.ok(cartService.updateCartItem(currentUser.getId(), id, request));
     }
 
-    @DeleteMapping("/items/{id}")
+    @DeleteMapping({ "/{id}", "/items/{id}" })
     public ResponseEntity<Void> removeCartItem(
             @AuthenticationPrincipal UserPrincipal currentUser,
             @PathVariable(name = "id") Long id) {

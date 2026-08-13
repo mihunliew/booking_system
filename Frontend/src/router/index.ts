@@ -17,6 +17,7 @@ import AdminLayout from '../layouts/AdminLayout.vue'
 import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
 import AdminUserView from '../views/admin/AdminUserView.vue'
 import AdminProductView from '../views/admin/AdminProductView.vue'
+import AdminScheduleView from '../views/admin/AdminScheduleView.vue'
 import AdminBookingView from '../views/admin/AdminBookingView.vue'
 import AdminRoleView from '../views/admin/AdminRoleView.vue'
 import AdminSettingView from '../views/admin/AdminSettingView.vue'
@@ -47,6 +48,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: '', name: 'AdminDashboard', component: AdminDashboardView },
       { path: 'users', name: 'AdminUsers', component: AdminUserView },
       { path: 'products', name: 'AdminProducts', component: AdminProductView },
+      { path: 'schedule', name: 'AdminSchedule', component: AdminScheduleView },
       { path: 'bookings', name: 'AdminBookings', component: AdminBookingView },
       { path: 'bookings/:id', name: 'AdminBookingDetail', component: BookingDetailView },
       { path: 'payments', name: 'AdminPayments', component: AdminPaymentView },

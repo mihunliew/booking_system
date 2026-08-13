@@ -45,20 +45,41 @@
       continueText="Confirm & Add to Cart"
       :continueAction="submitAddToCart"
       :submitting="submitting"
+      :continueDisabled="checkingAvailability || (availability !== null && availability.availableSlots <= 0)"
       @close="isModalOpen = false"
     >
       <div v-if="selectedProduct" class="booking-modal-body">
         <h4>{{ selectedProduct.name }}</h4>
-        <p class="modal-price">${{ selectedProduct.price }} / day</p>
+        <p class="modal-price">${{ selectedProduct.price }} / day <small style="opacity: 0.7;">(Max {{ selectedProduct.capacity }} guests)</small></p>
 
         <div class="form-group" style="margin-top: 1rem;">
           <label class="form-label">Booking Date</label>
-          <input v-model="bookingForm.bookingDate" type="date" class="form-input" :min="minDate" required />
+          <input v-model="bookingForm.bookingDate" @change="checkAvailability" type="date" class="form-input" :min="minDate" required />
+        </div>
+
+        <div v-if="checkingAvailability" class="availability-status" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+          Checking daily availability...
+        </div>
+        <div v-else-if="availability" class="availability-status" style="margin-bottom: 0.75rem;">
+          <span v-if="availability.availableSlots > 0" class="badge badge-success" style="background: rgba(52, 211, 153, 0.15); color: #34d399; padding: 0.35rem 0.65rem; border-radius: 6px; font-weight: 600;">
+            ✓ {{ availability.availableSlots }} unit(s) available for {{ bookingForm.bookingDate }}
+          </span>
+          <span v-else class="badge badge-danger" style="background: rgba(248, 113, 113, 0.15); color: #f87171; padding: 0.35rem 0.65rem; border-radius: 6px; font-weight: 600;">
+            ✕ Sold out for {{ bookingForm.bookingDate }}
+          </span>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Quantity / Capacity Slots</label>
-          <input v-model.number="bookingForm.quantity" type="number" min="1" :max="selectedProduct.capacity" class="form-input" required />
+          <label class="form-label">Quantity / Units Needed</label>
+          <input 
+            v-model.number="bookingForm.quantity" 
+            type="number" 
+            min="1" 
+            :max="availability ? availability.availableSlots : (selectedProduct.stockQuantity || 10)" 
+            class="form-input" 
+            :disabled="availability !== null && availability.availableSlots <= 0"
+            required 
+          />
         </div>
       </div>
     </DialogPlus>
@@ -113,17 +134,38 @@ const selectCategory = (cat: string) => {
   fetchProducts(cat)
 }
 
+const availability = ref<any>(null)
+const checkingAvailability = ref(false)
+
+const checkAvailability = async () => {
+  if (!selectedProduct.value || !bookingForm.value.bookingDate) return
+  checkingAvailability.value = true
+  try {
+    const res = await ProductApi.getProductAvailability(selectedProduct.value.id, bookingForm.value.bookingDate)
+    availability.value = res
+    if (res.availableSlots < bookingForm.value.quantity) {
+      bookingForm.value.quantity = Math.max(1, res.availableSlots)
+    }
+  } catch (err) {
+    console.error('Failed to check availability:', err)
+  } finally {
+    checkingAvailability.value = false
+  }
+}
+
 const openAddToCartModal = (product: ProductDTO) => {
   if (!isAuthenticated()) {
     router.push('/login')
     return
   }
   selectedProduct.value = product
+  availability.value = null
   bookingForm.value = {
     bookingDate: today,
     quantity: 1
   }
   isModalOpen.value = true
+  checkAvailability()
 }
 
 const submitAddToCart = async () => {

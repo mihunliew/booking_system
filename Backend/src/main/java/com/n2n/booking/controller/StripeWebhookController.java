@@ -25,11 +25,13 @@ import java.util.Optional;
 public class StripeWebhookController {
 
     private final BookingRepository bookingRepository;
+    private final com.n2n.booking.repository.ProductSlotHoldRepository productSlotHoldRepository;
 
     @Value("${stripe.webhook-secret}")
     private String endpointSecret;
 
     @PostMapping("/webhook")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<String> handleStripeEvent(
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String sigHeader) {
@@ -91,6 +93,10 @@ public class StripeWebhookController {
                 
                 if (session.getAmountTotal() != null) {
                     booking.setAmountPaid(new BigDecimal(session.getAmountTotal()).divide(new BigDecimal(100)));
+                }
+
+                if (booking.getUser() != null) {
+                    productSlotHoldRepository.deleteByUserId(booking.getUser().getId());
                 }
 
                 bookingRepository.save(booking);

@@ -12,6 +12,9 @@
       <router-link v-if="hasPermission('PRODUCTS', 'READ')" to="/admin/products" class="nav-link" active-class="active">
         📦 Products & Services
       </router-link>
+      <router-link v-if="hasPermission('PRODUCTS', 'READ')" to="/admin/schedule" class="nav-link" active-class="active">
+        📅 Availability & Schedule
+      </router-link>
       <router-link v-if="hasPermission('BOOKINGS', 'READ')" to="/admin/bookings" class="nav-link" active-class="active">
         📑 Booking Orders
       </router-link>

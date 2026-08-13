@@ -104,6 +104,20 @@
     </div>
 
     <Toast ref="toastRef" />
+
+    <!-- Persistent Out of Stock / Availability Error Dialog -->
+    <DialogPlus
+      :is-open="showErrorDialog"
+      title="Slot Availability Alert"
+      continue-text="Okay"
+      :continue-action="handleDialogOkay"
+      :close-on-backdrop="false"
+      @close="handleDialogOkay"
+    >
+      <div class="availability-error-body">
+        <p class="error-msg-text">{{ errorMessage }}</p>
+      </div>
+    </DialogPlus>
   </div>
 </template>
 
@@ -113,6 +127,7 @@ import { useRouter } from 'vue-router'
 import { BookingApi, SettingApi, PromoCodeApi } from '../../services'
 import type { BookingSummaryResponse, SettingResponse } from '../../services'
 import Toast from '../../components/Toast.vue'
+import DialogPlus from '../../components/DialogPlus.vue'
 
 const router = useRouter()
 const summary = ref<BookingSummaryResponse | null>(null)
@@ -121,6 +136,14 @@ const submitting = ref(false)
 const applyingPromo = ref(false)
 const promoInput = ref('')
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
+
+const showErrorDialog = ref(false)
+const errorMessage = ref('')
+
+const handleDialogOkay = () => {
+  showErrorDialog.value = false
+  router.push('/cart')
+}
 
 const selectedMethod = ref<number | null>(null)
 const notes = ref('')
@@ -139,8 +162,11 @@ const fetchCheckoutData = async () => {
     if (paymentMethods.value.length > 0) {
       selectedMethod.value = paymentMethods.value[0].id
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to load checkout summary:', err)
+    const msg = typeof err === 'string' ? err : (err.message || 'Failed to load checkout summary')
+    errorMessage.value = msg
+    showErrorDialog.value = true
   } finally {
     loading.value = false
   }
@@ -209,7 +235,8 @@ const confirmCheckout = async () => {
     }
   } catch (err: any) {
     const errorMsg = typeof err === 'string' ? err : (err.message || 'Checkout failed');
-    toastRef.value?.show(errorMsg, 'error')
+    errorMessage.value = errorMsg
+    showErrorDialog.value = true
   } finally {
     submitting.value = false
   }
@@ -421,5 +448,16 @@ onMounted(() => {
 .total-price {
   font-size: 1.5rem;
   color: #38bdf8;
+}
+
+.availability-error-body {
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.error-msg-text {
+  font-size: 1.05rem;
+  color: var(--text-main, #ffffff);
+  line-height: 1.6;
 }
 </style>
