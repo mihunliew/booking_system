@@ -41,21 +41,31 @@
       </div>
     </div>
 
-    <Modal :isOpen="isModalOpen" :title="isEditMode ? 'Configure Role' : 'Create Role'" @close="isModalOpen = false">
+    <!-- Create/Edit Role Dialog -->
+    <DialogPlus 
+      :isOpen="isModalOpen" 
+      :title="isEditMode ? 'Edit Admin Role' : 'Create Admin Role'" 
+      cancelText="Cancel"
+      :cancelAction="() => isModalOpen = false"
+      continueText="Save Role"
+      :continueAction="saveRole"
+      :submitting="submitting"
+      @close="isModalOpen = false"
+    >
       <form @submit.prevent="saveRole">
         <div class="form-group">
-          <label class="form-label">Role Name</label>
-          <input v-model="form.name" type="text" class="form-input" required placeholder="e.g. Content Manager" />
+          <label class="form-label">Role Name *</label>
+          <input v-model="form.name" type="text" class="form-input" required placeholder="e.g. Finance Manager" />
         </div>
 
         <div class="form-group">
           <label class="form-label">Description</label>
-          <textarea v-model="form.description" class="form-textarea" rows="2"></textarea>
+          <input v-model="form.description" type="text" class="form-input" placeholder="Role responsibilities..." />
         </div>
 
-        <h4 style="margin: 1.5rem 0 0.5rem 0; color: var(--text-main);">Module Permissions</h4>
-        <div class="permissions-container">
-          <table class="custom-table permission-table">
+        <h4 class="section-title">Module Permissions</h4>
+        <div class="permission-matrix">
+          <table class="matrix-table">
             <thead>
               <tr>
                 <th>Module</th>
@@ -76,15 +86,8 @@
             </tbody>
           </table>
         </div>
-
-        <div class="modal-actions">
-          <button type="button" @click="isModalOpen = false" class="btn btn-secondary btn-full">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-full" :disabled="submitting">
-            {{ submitting ? 'Saving...' : 'Save Role' }}
-          </button>
-        </div>
       </form>
-    </Modal>
+    </DialogPlus>
 
     <Toast ref="toastRef" />
   </div>
@@ -95,7 +98,7 @@ import { ref, onMounted } from 'vue'
 import { AdminApi } from '../../services'
 import type { AdminRoleResponse, AdminRoleRequest } from '../../services/admin.api'
 import type { AdminPermissionDTO } from '../../dto/auth.dto'
-import Modal from '../../components/Modal.vue'
+import DialogPlus from '../../components/DialogPlus.vue'
 import Toast from '../../components/Toast.vue'
 import { isSuperAdmin } from '../../helpers/auth.helper'
 
@@ -107,7 +110,7 @@ const isEditMode = ref(false)
 const editingId = ref<number | null>(null)
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
 
-const availableModules = ['PRODUCTS', 'BOOKINGS', 'PROMOCODES', 'USERS', 'ROLES']
+const availableModules = ['PRODUCTS', 'BOOKINGS', 'PAYMENTS', 'PROMOCODES', 'USERS', 'ROLES']
 
 const form = ref<AdminRoleRequest>({
   name: '',

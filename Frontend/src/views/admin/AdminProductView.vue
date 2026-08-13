@@ -51,32 +51,41 @@
       </div>
     </div>
 
-    <Modal :isOpen="isModalOpen" :title="isEditMode ? 'Edit Product' : 'Add New Product'" @close="isModalOpen = false">
+    <DialogPlus 
+      :isOpen="isModalOpen" 
+      :title="isEditMode ? 'Edit Product' : 'Add New Product'" 
+      cancelText="Cancel"
+      :cancelAction="() => isModalOpen = false"
+      :continueText="isEditMode ? 'Update Product' : 'Create Product'"
+      :continueAction="saveProduct"
+      :submitting="submitting"
+      @close="isModalOpen = false"
+    >
       <form @submit.prevent="saveProduct">
         <div class="form-group">
-          <label class="form-label">Product Name</label>
-          <input v-model="form.name" type="text" class="form-input" required />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Category</label>
-          <select v-model="form.category" class="form-select" required>
-            <option value="Rooms">Rooms</option>
-            <option value="Venues">Venues</option>
-            <option value="Studios">Studios</option>
-            <option value="Equipment">Equipment</option>
-            <option value="Workspace">Workspace</option>
-          </select>
+          <label class="form-label">Product/Service Name *</label>
+          <input v-model="form.name" type="text" class="form-input" required placeholder="e.g. Grand Executive Suite" />
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Price ($ / day)</label>
+            <label class="form-label">Category *</label>
+            <select v-model="form.category" class="form-select" required>
+              <option value="Rooms">Rooms</option>
+              <option value="Venues">Venues</option>
+              <option value="Studios">Studios</option>
+              <option value="Equipment">Equipment</option>
+              <option value="Workspace">Workspace</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Price ($/day) *</label>
             <input v-model.number="form.price" type="number" step="0.01" min="0" class="form-input" required />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Capacity Limit</label>
+            <label class="form-label">Capacity *</label>
             <input v-model.number="form.capacity" type="number" min="1" class="form-input" required />
           </div>
         </div>
@@ -99,15 +108,8 @@
             <option value="MAINTENANCE">MAINTENANCE</option>
           </select>
         </div>
-
-        <div class="modal-actions">
-          <button type="button" @click="isModalOpen = false" class="btn btn-secondary btn-full">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-full" :disabled="submitting">
-            {{ submitting ? 'Saving...' : (isEditMode ? 'Update Product' : 'Create Product') }}
-          </button>
-        </div>
       </form>
-    </Modal>
+    </DialogPlus>
 
     <Toast ref="toastRef" />
   </div>
@@ -117,7 +119,7 @@
 import { ref, onMounted } from 'vue'
 import { AdminApi } from '../../services'
 import type { ProductDTO } from '../../services'
-import Modal from '../../components/Modal.vue'
+import DialogPlus from '../../components/DialogPlus.vue'
 import Toast from '../../components/Toast.vue'
 import { getCategoryBadgeColor } from '../../helpers/color.helper'
 import { hasPermission } from '../../helpers/auth.helper'

@@ -51,51 +51,46 @@
       </div>
     </div>
 
-    <!-- Modal -->
-    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-      <div class="modal-content glass-panel">
-        <div class="modal-header">
-          <h2>{{ editingSetting ? 'Edit Payment Method' : 'Add Payment Method' }}</h2>
-          <button class="close-btn" @click="closeModal">&times;</button>
+    <!-- Dialog -->
+    <DialogPlus 
+      :isOpen="showModal" 
+      :title="editingSetting ? 'Edit Payment Method' : 'Add Payment Method'" 
+      cancelText="Cancel"
+      :cancelAction="closeModal"
+      continueText="Save Method"
+      :continueAction="saveSetting"
+      :submitting="submitting"
+      @close="closeModal"
+    >
+      <form @submit.prevent="saveSetting">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input v-model="form.name" type="text" class="form-input" required placeholder="e.g. Credit Card" />
         </div>
         
-        <form @submit.prevent="saveSetting" class="modal-form">
-          <div class="form-group">
-            <label class="form-label">Name</label>
-            <input v-model="form.name" type="text" class="form-input" required placeholder="e.g. Credit Card" />
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Provider Key (Stripe)</label>
-            <input v-model="form.providerKey" type="text" class="form-input" required placeholder="e.g. card, fpx" />
-          </div>
+        <div class="form-group">
+          <label class="form-label">Provider Key (Stripe)</label>
+          <input v-model="form.providerKey" type="text" class="form-input" required placeholder="e.g. card, fpx" />
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">Icon (Emoji)</label>
-            <input v-model="form.icon" type="text" class="form-input" placeholder="e.g. 💳" />
-          </div>
+        <div class="form-group">
+          <label class="form-label">Icon (Emoji)</label>
+          <input v-model="form.icon" type="text" class="form-input" placeholder="e.g. 💳" />
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">Description</label>
-            <input v-model="form.description" type="text" class="form-input" placeholder="e.g. Pay securely via card" />
-          </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input v-model="form.description" type="text" class="form-input" placeholder="e.g. Pay securely via card" />
+        </div>
 
-          <div class="form-group checkbox-group">
-            <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-              <input v-model="form.active" type="checkbox" />
-              <span>Is Active?</span>
-            </label>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" @click="closeModal" class="btn btn-secondary">Cancel</button>
-            <button type="submit" class="btn btn-primary" :disabled="submitting">
-              {{ submitting ? 'Saving...' : 'Save Method' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div class="form-group checkbox-group">
+          <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input v-model="form.active" type="checkbox" />
+            <span>Is Active?</span>
+          </label>
+        </div>
+      </form>
+    </DialogPlus>
 
     <Toast ref="toastRef" />
   </div>
@@ -105,6 +100,7 @@
 import { ref, onMounted } from 'vue'
 import { SettingApi } from '../../services'
 import type { SettingResponse, SettingRequest } from '../../services'
+import DialogPlus from '../../components/DialogPlus.vue'
 import Toast from '../../components/Toast.vue'
 
 const settings = ref<SettingResponse[]>([])

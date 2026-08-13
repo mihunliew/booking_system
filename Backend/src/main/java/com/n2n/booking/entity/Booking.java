@@ -57,6 +57,9 @@ public class Booking {
     @Column(name = "amount_paid", precision = 10, scale = 2)
     private BigDecimal amountPaid;
 
+    @Column(name = "refunded_amount", precision = 10, scale = 2)
+    private BigDecimal refundedAmount;
+
     @Column(name = "promo_code", length = 50)
     private String promoCode;
 

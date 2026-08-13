@@ -68,24 +68,34 @@
     </div>
 
     <!-- Create/Edit Modal -->
-    <Modal :isOpen="isModalOpen" :title="editingId ? 'Edit Promo Code' : 'Create Promo Code'" @close="closeModal">
-      <form @submit.prevent="savePromoCode" class="modal-form">
+    <DialogPlus 
+      :isOpen="isModalOpen" 
+      :title="editingId ? 'Edit Promo Code' : 'Create Promo Code'" 
+      cancelText="Cancel"
+      :cancelAction="closeModal"
+      continueText="Save Promo Code"
+      :continueAction="savePromoCode"
+      :submitting="saving"
+      @close="closeModal"
+    >
+      <form @submit.prevent="savePromoCode">
         <div class="form-group">
           <label class="form-label">Promo Code *</label>
-          <input type="text" v-model="form.code" required class="form-input uppercase" placeholder="e.g. SUMMER2026" />
+          <input type="text" v-model="form.code" class="form-input" placeholder="e.g. SUMMER2026" required style="text-transform: uppercase;" />
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Discount Type *</label>
             <select v-model="form.discountType" class="form-select">
-              <option value="PERCENTAGE">PERCENTAGE (%)</option>
-              <option value="FIXED_AMOUNT">FIXED AMOUNT ($)</option>
+              <option :value="DiscountType.PERCENTAGE">Percentage (%)</option>
+              <option :value="DiscountType.FIXED_AMOUNT">Fixed Amount ($)</option>
             </select>
           </div>
+
           <div class="form-group">
             <label class="form-label">Discount Value *</label>
-            <input type="number" step="0.01" min="0.01" v-model.number="form.discountValue" required class="form-input" placeholder="e.g. 10 or 25.50" />
+            <input type="number" step="0.01" min="0.01" v-model.number="form.discountValue" class="form-input" required />
           </div>
         </div>
 
@@ -94,9 +104,10 @@
             <label class="form-label">Min Spend ($)</label>
             <input type="number" step="0.01" min="0" v-model.number="form.minSpend" class="form-input" placeholder="0.00" />
           </div>
+
           <div class="form-group">
             <label class="form-label">Max Discount Cap ($)</label>
-            <input type="number" step="0.01" min="0" v-model.number="form.maxDiscount" class="form-input" placeholder="Leave empty for no cap" />
+            <input type="number" step="0.01" min="0" v-model.number="form.maxDiscount" class="form-input" placeholder="Leave empty if none" />
           </div>
         </div>
 
@@ -112,15 +123,8 @@
             </label>
           </div>
         </div>
-
-        <div class="modal-actions">
-          <button type="button" @click="closeModal" class="btn btn-secondary">Cancel</button>
-          <button type="submit" class="btn btn-primary" :disabled="saving">
-            {{ saving ? 'Saving...' : 'Save Promo Code' }}
-          </button>
-        </div>
       </form>
-    </Modal>
+    </DialogPlus>
 
     <Toast ref="toastRef" />
   </div>
@@ -131,7 +135,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { PromoCodeApi } from '../../services'
 import type { PromoCodeResponse } from '../../services'
 import { DiscountType } from '../../constants/enums'
-import Modal from '../../components/Modal.vue'
+import DialogPlus from '../../components/DialogPlus.vue'
 import Toast from '../../components/Toast.vue'
 import { getStoredUser } from '../../helpers/auth.helper'
 

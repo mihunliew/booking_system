@@ -50,12 +50,21 @@
       </div>
     </div>
 
-    <Modal :isOpen="isRoleModalOpen" title="Manage User Role" @close="isRoleModalOpen = false">
+    <!-- Role Update Dialog -->
+    <DialogPlus 
+      :isOpen="isRoleModalOpen" 
+      title="Assign System Role" 
+      cancelText="Cancel"
+      :cancelAction="() => isRoleModalOpen = false"
+      continueText="Save Role"
+      :continueAction="submitRoleUpdate"
+      :submitting="submitting"
+      @close="isRoleModalOpen = false"
+    >
       <div v-if="selectedUser">
-        <p><strong>Username:</strong> {{ selectedUser.username }}</p>
-        <p><strong>Current Base Role:</strong> {{ selectedUser.role }}</p>
-        
-        <div class="form-group" style="margin-top: 1rem;">
+        <p><strong>User:</strong> {{ selectedUser.fullName }} ({{ selectedUser.username }})</p>
+
+        <div class="form-group" style="margin-top: 1.25rem;">
           <label class="form-label">Base Role</label>
           <select v-model="roleForm.baseRole" class="form-select">
             <option value="ROLE_USER">USER</option>
@@ -71,17 +80,20 @@
             <option v-for="r in adminRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
           </select>
         </div>
-
-        <div class="modal-actions" style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <button @click="isRoleModalOpen = false" class="btn btn-secondary btn-full">Cancel</button>
-          <button @click="submitRoleUpdate" class="btn btn-primary btn-full" :disabled="submitting">
-            {{ submitting ? 'Updating...' : 'Save Role' }}
-          </button>
-        </div>
       </div>
-    </Modal>
+    </DialogPlus>
 
-    <Modal :isOpen="isCreateModalOpen" title="Create New User" @close="isCreateModalOpen = false">
+    <!-- Create User Dialog -->
+    <DialogPlus 
+      :isOpen="isCreateModalOpen" 
+      title="Create New User" 
+      cancelText="Cancel"
+      :cancelAction="() => isCreateModalOpen = false"
+      continueText="Create User"
+      :continueAction="submitCreateUser"
+      :submitting="submitting"
+      @close="isCreateModalOpen = false"
+    >
       <div>
         <div class="form-group">
           <label class="form-label">Username</label>
@@ -118,15 +130,8 @@
             <option v-for="r in adminRoles" :key="r.id" :value="r.id">{{ r.name }}</option>
           </select>
         </div>
-
-        <div class="modal-actions" style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <button @click="isCreateModalOpen = false" class="btn btn-secondary btn-full">Cancel</button>
-          <button @click="submitCreateUser" class="btn btn-primary btn-full" :disabled="submitting">
-            {{ submitting ? 'Creating...' : 'Create User' }}
-          </button>
-        </div>
       </div>
-    </Modal>
+    </DialogPlus>
 
     <Toast ref="toastRef" />
   </div>
@@ -137,7 +142,7 @@ import { ref, onMounted } from 'vue'
 import { AdminApi } from '../../services'
 import type { UserResponse } from '../../services'
 import StatusBadge from '../../components/StatusBadge.vue'
-import Modal from '../../components/Modal.vue'
+import DialogPlus from '../../components/DialogPlus.vue'
 import Toast from '../../components/Toast.vue'
 import { Role } from '../../constants/enums'
 import { hasPermission, isSuperAdmin } from '../../helpers/auth.helper'

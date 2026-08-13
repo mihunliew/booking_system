@@ -20,4 +20,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     BigDecimal calculateTotalRevenue();
 
     Long countByStatus(BookingStatus status);
+
+    List<Booking> findByPaymentStatusOrderByCreatedAtDesc(com.n2n.booking.enums.PaymentStatus paymentStatus);
+
+    Long countByPaymentStatus(com.n2n.booking.enums.PaymentStatus paymentStatus);
 }

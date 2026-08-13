@@ -37,7 +37,16 @@
       />
     </div>
 
-    <Modal :isOpen="isModalOpen" title="Book Service / Product" @close="isModalOpen = false">
+    <DialogPlus 
+      :isOpen="isModalOpen" 
+      title="Book Service / Product" 
+      cancelText="Cancel"
+      :cancelAction="() => isModalOpen = false"
+      continueText="Confirm & Add to Cart"
+      :continueAction="submitAddToCart"
+      :submitting="submitting"
+      @close="isModalOpen = false"
+    >
       <div v-if="selectedProduct" class="booking-modal-body">
         <h4>{{ selectedProduct.name }}</h4>
         <p class="modal-price">${{ selectedProduct.price }} / day</p>
@@ -51,15 +60,8 @@
           <label class="form-label">Quantity / Capacity Slots</label>
           <input v-model.number="bookingForm.quantity" type="number" min="1" :max="selectedProduct.capacity" class="form-input" required />
         </div>
-
-        <div class="modal-actions">
-          <button @click="isModalOpen = false" class="btn btn-secondary btn-full">Cancel</button>
-          <button @click="submitAddToCart" class="btn btn-primary btn-full" :disabled="submitting">
-            {{ submitting ? 'Adding...' : 'Confirm & Add to Cart' }}
-          </button>
-        </div>
       </div>
-    </Modal>
+    </DialogPlus>
 
     <Toast ref="toastRef" />
   </div>
@@ -69,7 +71,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ProductCard from '../../components/ProductCard.vue'
-import Modal from '../../components/Modal.vue'
+import DialogPlus from '../../components/DialogPlus.vue'
 import Toast from '../../components/Toast.vue'
 import { ProductApi, CartApi } from '../../services'
 import type { ProductDTO } from '../../services'

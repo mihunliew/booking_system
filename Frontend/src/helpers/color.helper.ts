@@ -56,12 +56,13 @@ export const getPaymentStatusColor = (status: PaymentStatus | string): ColorBadg
         border: '1px solid rgba(16, 185, 129, 0.3)',
         label: 'Paid'
       }
+    case PaymentStatus.PENDING:
     case PaymentStatus.UNPAID:
       return {
-        bg: 'rgba(239, 68, 68, 0.15)',
-        color: '#f87171',
-        border: '1px solid rgba(239, 68, 68, 0.3)',
-        label: 'Unpaid'
+        bg: 'rgba(245, 158, 11, 0.15)',
+        color: '#fbbf24',
+        border: '1px solid rgba(245, 158, 11, 0.3)',
+        label: status === PaymentStatus.PENDING ? 'Pending' : 'Unpaid'
       }
     case PaymentStatus.REFUNDED:
       return {
@@ -69,6 +70,13 @@ export const getPaymentStatusColor = (status: PaymentStatus | string): ColorBadg
         color: '#c084fc',
         border: '1px solid rgba(168, 85, 247, 0.3)',
         label: 'Refunded'
+      }
+    case PaymentStatus.PARTIALLY_REFUNDED:
+      return {
+        bg: 'rgba(249, 115, 22, 0.15)',
+        color: '#fb923c',
+        border: '1px solid rgba(249, 115, 22, 0.3)',
+        label: 'Partially Refunded'
       }
     case PaymentStatus.FAILED:
       return {

@@ -5,6 +5,7 @@ import ProductApi from './product.api'
 import CartApi from './cart.api'
 import SettingApi from './setting.api'
 import PromoCodeApi from './promocode.api'
+import PaymentApi from './payment.api'
 
 export {
   AuthApi,
@@ -13,7 +14,8 @@ export {
   ProductApi,
   CartApi,
   SettingApi,
-  PromoCodeApi
+  PromoCodeApi,
+  PaymentApi
 }
 
 // Re-export all DTOs for convenience
@@ -24,3 +26,4 @@ export * from '@/dto/product.dto'
 export * from '@/dto/cart.dto'
 export * from '@/dto/setting.dto'
 export * from '@/dto/promocode.dto'
+export * from '@/dto/payment.dto'

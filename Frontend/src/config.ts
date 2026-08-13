@@ -32,6 +32,7 @@ class AppConfig {
   static apiAdminDashboardUrl: string = `${this.backendUrl}/admin/dashboard`;
   static apiAdminRolesUrl: string = `${this.backendUrl}/admin/roles`;
   static apiAdminSettingsUrl: string = `${this.backendUrl}/admin/settings`;
+  static apiAdminPaymentsUrl: string = `${this.backendUrl}/admin/payments`;
 
   // Public Settings
   static apiSettingsPaymentMethodsUrl: string = `${this.backendUrl}/settings/payment-methods`;

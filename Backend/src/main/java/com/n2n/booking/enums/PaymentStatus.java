@@ -2,7 +2,9 @@ package com.n2n.booking.enums;
 
 public enum PaymentStatus {
     UNPAID,
+    PENDING,
     PAID,
+    FAILED,
     REFUNDED,
-    FAILED
+    PARTIALLY_REFUNDED
 }

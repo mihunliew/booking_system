@@ -286,15 +286,45 @@ For status badges, use the `<StatusBadge>` component:
 
 | Component           | Import Path                              | Props                                     | Usage                                      |
 | ------------------- | ---------------------------------------- | ----------------------------------------- | ------------------------------------------ |
-| `<Toast>`           | `../../components/Toast.vue`             | –                                         | `ref="toastRef"` → `toastRef.value?.show(msg, type)` |
-| `<Modal>`           | `../../components/Modal.vue`             | `:isOpen`, `:title`, `@close`             | Wrap slot content inside                   |
-| `<StatusBadge>`     | `../../components/StatusBadge.vue`       | `:type`, `:value`                         | Dynamic color badge based on status/role   |
-| `<ProductCard>`     | `../../components/ProductCard.vue`       | `:product`, `@add-to-cart`                | Standard card for product listings         |
+| `<Toast>`           | `@/components/Toast.vue`                 | –                                         | `ref="toastRef"` → `toastRef.value?.show(msg, type)` |
+| `<DialogPlus>`      | `@/components/DialogPlus.vue`            | `:isOpen`, `:title`, `:cancelText`, `:cancelAction`, `:continueText`, `:continueAction`, `:submitting`, `:continueDisabled`, `:continueBtnClass`, `@close` | Standardized modal dialog wrapper with side-by-side action buttons |
+| `<StatusBadge>`     | `@/components/StatusBadge.vue`           | `:type`, `:value`                         | Dynamic color badge based on status/role   |
+| `<ProductCard>`     | `@/components/ProductCard.vue`           | `:product`, `@add-to-cart`                | Standard card for product listings         |
+
+> **CRITICAL RULE FOR DIALOGS / MODALS**:
+> **ALWAYS use `<DialogPlus>` for all modals, popups, and dialogs across the application.**
+> Do **NOT** use basic `<Modal>` or custom modal markup.
+>
+> **`<DialogPlus>` Prop Rules**:
+> - Pass `:isOpen="isModalOpen"` and `:title="Dialog Title"`.
+> - Pass `:cancelText="Cancel"` and `:cancelAction="handleCancel"`. **Note**: If `:cancelAction` is omitted (e.g. for view-only/inspect popups), the Cancel button will **NOT** be rendered!
+> - Pass `:continueText="Save / Confirm"` and `:continueAction="handleSubmit"`.
+> - Pass `:submitting="submitting"` to show loading state on the primary button.
+>
+> **Example Usage**:
+> ```vue
+> <DialogPlus 
+>   :isOpen="isModalOpen" 
+>   title="Edit Product" 
+>   cancelText="Cancel"
+>   :cancelAction="() => isModalOpen = false"
+>   continueText="Save Product"
+>   :continueAction="submitProduct"
+>   :submitting="submitting"
+>   @close="isModalOpen = false"
+> >
+>   <!-- Form / Body Slot -->
+>   <div class="form-group">
+>     <label class="form-label">Product Name</label>
+>     <input v-model="form.name" class="form-input" />
+>   </div>
+> </DialogPlus>
+> ```
 
 **Toast usage pattern**:
 ```vue
 <script setup lang="ts">
-import Toast from '../../components/Toast.vue'
+import Toast from '@/components/Toast.vue'
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
 
 // In methods:
