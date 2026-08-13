@@ -138,7 +138,6 @@
       cancelText="Cancel"
       :cancelAction="() => isRefundModalOpen = false"
       continueText="Confirm Refund"
-      continueBtnClass="btn-warning"
       :continueAction="submitRefund"
       :submitting="submitting"
       :continueDisabled="refundForm.amount <= 0 || refundForm.amount > maxRefundable"
